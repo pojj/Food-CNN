@@ -6,6 +6,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader
+import torchvision.models as models
 
 
 IMAGES_DIR = "data\\images\\"
@@ -61,6 +62,33 @@ class FormatImage:
         new_image.paste(scaled_image, padding)
 
         return self.to_tensor(new_image)
+
+
+class NeuralNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.vgg16 = models.vgg16(weights="IMAGENET1K_V1")
+        self.features = self.vgg16.features
+        self.classification = nn.Sequential(
+            nn.Linear(25088, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(4096, 101),
+        )
+
+    def forward(self, x):
+        features = self.features(x)
+        features = torch.flatten(features, 1)
+        pred = self.classification(features)
+        return pred
+
+
+model = NeuralNetwork()
+
+print(model)
 
 
 training_data = FoodDataset(TRAIN_DATA_PATH, IMAGES_DIR, FormatImage())
