@@ -1,3 +1,5 @@
 .venv
 tutorial/data
 tutorial/models
+data/images
+data/meta
