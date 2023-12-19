@@ -29,14 +29,16 @@ with open(TRAIN_DATA, "r") as t:
     data = json.load(t)
 
     with open(FORMATED_TRAIN, "w") as f:
+        f.write("Label, File_path\n")
         for food in data:
             for img in data[food]:
-                f.write(f"{class_dict[food]},{img}\n")
+                f.write(str(class_dict[food]) + "," + img.replace("/", "\\") + ".jpg\n")
 
 with open(TESTING_DATA, "r") as t:
     data = json.load(t)
 
     with open(FORMATED_TEST, "w") as f:
+        f.write("Label, File_path\n")
         for food in data:
             for img in data[food]:
-                f.write(f"{class_dict[food]},{img}\n")
+                f.write(str(class_dict[food]) + "," + img.replace("/", "\\") + ".jpg\n")
