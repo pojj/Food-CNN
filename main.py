@@ -18,11 +18,11 @@ with open("data\\classdict.json", "r") as c, open("data\\labeldict.json", "r") a
     CLASS_DICT = json.load(c)
     LABEL_DICT = json.load(l)
 
-IMAGE_SIZE = 32
+IMAGE_SIZE = 64
 
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 5e-3
 BATCH_SIZE = 128
-EPOCHS = 10
+EPOCHS = 100
 
 
 class FoodDataset(Dataset):
@@ -114,13 +114,10 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         # Print time calcuations for only first batch
         if first:
             projected = int((time.time() - t0) * len(dataloader))
-            days = projected // 86400
-            hours = (projected - (days * 86400)) // 3600
-            minutes = (projected - (days * 86400) - (hours * 3600)) // 60
+            hours = projected // 3600
+            minutes = (projected - (hours * 3600)) // 60
             print(f"Batch time: {time.time()-t0:>0.1f}s,", end=" ")
-            print(
-                f"Projected epoch time: {days} days, {hours} hours, {minutes} minutes"
-            )
+            print(f"Projected epoch time: {hours} hours, {minutes} minutes")
             first = False
 
         # Print info every couple batches
@@ -158,9 +155,12 @@ def test_loop(dataloader, model, loss_fn):
 
 model = NeuralNetwork()
 
+model.fc.load_state_dict(torch.load("fcweights1.pth"))
+
 for param in model.residual.parameters():
     param.requires_grad_(False)
-
+for param in model.fc.parameters():
+    param.requires_grad_(True)
 
 training_data = FoodDataset(TRAIN_DATA_PATH, IMAGES_DIR, FormatImage())
 test_data = FoodDataset(TEST_DATA_PATH, IMAGES_DIR, FormatImage())
@@ -171,10 +171,10 @@ test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True)
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
-for t in range(EPOCHS):
-    print(f"Epoch {t+1}\n-------------------------------")
+for t in range(0, EPOCHS):
+    print(f"Epoch {t+1}\n---------------------------------------------------")
     train_loop(train_dataloader, model, loss_fn, optimizer)
-    torch.save(model.state_dict(), f"foodweights{t+1}.pth")
+    torch.save(model.fc.state_dict(), f"fcweights{t+1}.pth")
     test_loop(test_dataloader, model, loss_fn)
 
 print("Done!")
