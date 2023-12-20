@@ -18,7 +18,7 @@ with open("data\\classdict.json", "r") as c, open("data\\labeldict.json", "r") a
     CLASS_DICT = json.load(c)
     LABEL_DICT = json.load(l)
 
-IMAGE_SIZE = 224
+IMAGE_SIZE = 256
 
 LEARNING_RATE = 5e-3
 BATCH_SIZE = 128
@@ -72,8 +72,9 @@ class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
 
-        # resnet = models.resnet101(weights="IMAGENET1K_V2")
-        resnet = models.resnet18(weights="IMAGENET1K_V1")
+        resnet = models.resnet101(weights="IMAGENET1K_V2")
+        # resnet = models.resnet50(weights="IMAGENET1K_V1")
+        # resnet = models.resnet18(weights="IMAGENET1K_V1")
 
         self.residual = nn.Sequential(
             resnet.conv1,
@@ -87,8 +88,8 @@ class NeuralNetwork(nn.Module):
             resnet.avgpool,
         )
 
-        # self.fc = nn.Linear(2048, 101)
-        self.fc = nn.Linear(512, 101)
+        self.fc = torch.nn.Sequential(torch.nn.Dropout(0.5), torch.nn.Linear(2048, 101))
+        # self.fc = nn.Linear(512, 101)
 
     def forward(self, x):
         x = self.residual(x)
@@ -104,6 +105,9 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     first = True
 
     for batch, (X, y) in enumerate(dataloader):
+        if torch.cuda.is_available():
+            X, y = X.to("cuda"), y.to("cuda")
+
         # Compute prediction and loss
         pred = model(X)
         loss = loss_fn(pred, y)
@@ -123,7 +127,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
             first = False
 
         # Print info every couple batches
-        if (batch + 1) % 74 == 0:
+        if (batch + 1) % 8 == 0:
             loss = loss.item()
             if (batch + 1) < len(dataloader):
                 current = (batch + 1) * BATCH_SIZE
@@ -142,6 +146,9 @@ def test_loop(dataloader, model, loss_fn):
 
     with torch.no_grad():
         for X, y in dataloader:
+            if torch.cuda.is_available():
+                X, y = X.to("cuda"), y.to("cuda")
+
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
             correct += (pred.argmax(1) == y).int().sum().item()
@@ -159,11 +166,17 @@ start = 0
 
 model = NeuralNetwork()
 
+if torch.cuda.is_available():
+    model = model.to("cuda")
+
 # model.fc.load_state_dict(torch.load("fcweights\\fcweights" + str(start) + ".pth"))
 
-for param in model.residual.parameters():
-    param.requires_grad_(False)
-for param in model.fc.parameters():
+# for param in model.residual.parameters():
+#    param.requires_grad_(False)
+# for param in model.fc.parameters():
+#    param.requires_grad_(True)
+
+for param in model.parameters():
     param.requires_grad_(True)
 
 training_data = FoodDataset(TRAIN_DATA_PATH, IMAGES_DIR, FormatImage())
@@ -174,11 +187,11 @@ test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True)
 
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
-
+print(len(train_dataloader))
 for t in range(start, EPOCHS):
     print(f"Epoch {t+1}\n---------------------------------------------------")
     train_loop(train_dataloader, model, loss_fn, optimizer)
-    torch.save(model.fc.state_dict(), f"fcweights18-224\\fcweights{t+1}.pth")
+    torch.save(model.state_dict(), f"allweights101-256\\weights{t+1}.pth")
     test_loop(test_dataloader, model, loss_fn)
 
 print("Done!")
