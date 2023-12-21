@@ -20,7 +20,7 @@ with open("data\\classdict.json", "r") as c, open("data\\labeldict.json", "r") a
 
 IMAGE_SIZE = 256
 
-LEARNING_RATE = 5e-3
+LEARNING_RATE = 1e-3
 BATCH_SIZE = 128
 EPOCHS = 1000
 
@@ -72,8 +72,9 @@ class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
 
-        resnet = models.resnet101(weights="IMAGENET1K_V2")
-        # resnet = models.resnet50(weights="IMAGENET1K_V1")
+        # resnet = models.resnet101(weights="IMAGENET1K_V2")
+        resnet = models.resnet50(weights="IMAGENET1K_V2")
+        # resnet = models.resnet34(weights="IMAGENET1K_V1")
         # resnet = models.resnet18(weights="IMAGENET1K_V1")
 
         self.residual = nn.Sequential(
@@ -88,8 +89,8 @@ class NeuralNetwork(nn.Module):
             resnet.avgpool,
         )
 
-        self.fc = torch.nn.Sequential(torch.nn.Dropout(0.5), torch.nn.Linear(2048, 101))
-        # self.fc = nn.Linear(512, 101)
+        # self.fc = torch.nn.Sequential(torch.nn.Dropout(0.5), torch.nn.Linear(2048, 101))
+        self.fc = torch.nn.Linear(2048, 101)
 
     def forward(self, x):
         x = self.residual(x)
@@ -186,12 +187,12 @@ train_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE, shuffle=True
 test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True)
 
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
-print(len(train_dataloader))
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
 for t in range(start, EPOCHS):
     print(f"Epoch {t+1}\n---------------------------------------------------")
     train_loop(train_dataloader, model, loss_fn, optimizer)
-    torch.save(model.state_dict(), f"allweights101-256\\weights{t+1}.pth")
+    torch.save(model.state_dict(), f"allweights50-{IMAGE_SIZE}\\weights{t+1}.pth")
     test_loop(test_dataloader, model, loss_fn)
 
 print("Done!")
