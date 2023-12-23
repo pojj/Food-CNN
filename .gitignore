@@ -2,5 +2,4 @@
 tutorial/data
 tutorial/models
 data/images
-fcweights101-64
-allweights101-256
+models

@@ -20,7 +20,7 @@ with open("data\\classdict.json", "r") as c, open("data\\labeldict.json", "r") a
 
 IMAGE_SIZE = 256
 
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-5
 BATCH_SIZE = 128
 EPOCHS = 1000
 
@@ -89,8 +89,8 @@ class NeuralNetwork(nn.Module):
             resnet.avgpool,
         )
 
-        # self.fc = torch.nn.Sequential(torch.nn.Dropout(0.5), torch.nn.Linear(2048, 101))
         self.fc = torch.nn.Linear(2048, 101)
+        # self.fc = torch.nn.Linear(512, 101)
 
     def forward(self, x):
         x = self.residual(x)
@@ -163,14 +163,14 @@ def test_loop(dataloader, model, loss_fn):
     print(f"Test time: {time.time()-t0:>0.1f}s\n")
 
 
-start = 0
+start = 2
+start_path = f"models\\all50-{IMAGE_SIZE}"
 
 model = NeuralNetwork()
+model.load_state_dict(torch.load(f"{start_path}\\all{start}(63.1%).pth"))
 
 if torch.cuda.is_available():
     model = model.to("cuda")
-
-# model.fc.load_state_dict(torch.load("fcweights\\fcweights" + str(start) + ".pth"))
 
 # for param in model.residual.parameters():
 #    param.requires_grad_(False)
@@ -188,11 +188,13 @@ test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True)
 
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+optimizer.load_state_dict(torch.load(f"{start_path}\\optimizer{start}.pth"))
 
 for t in range(start, EPOCHS):
     print(f"Epoch {t+1}\n---------------------------------------------------")
     train_loop(train_dataloader, model, loss_fn, optimizer)
-    torch.save(model.state_dict(), f"allweights50-{IMAGE_SIZE}\\weights{t+1}.pth")
+    torch.save(model.state_dict(), f"{start_path}\\all{t+1}.pth")
+    torch.save(optimizer.state_dict(), f"{start_path}\\optimizer{t+1}.pth")
     test_loop(test_dataloader, model, loss_fn)
 
 print("Done!")
