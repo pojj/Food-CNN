@@ -1,7 +1,9 @@
 # Food CNN
 This is a respository containing AI models to classify images in the Food-101 dataset. I focused primarily on the ResNet architectures for training. My approach involved experimenting with ResNet18, ResNet34, ResNet50, and ResNet101 while exploring various image sizes. This endeavor aimed to optimize the model's performance in handling the dataset's complexities, such as limited training data per class, visual similarities between certain classes (e.g., steak vs. filet mignon), images with poor lighting or framing, and instances of multiple correct classes within single images.
 
-The best model scored 80% accuracy on the validation set.
+The best model scored 81% accuracy on the validation set.
+
+Then set up rest api using Flask to deploy the best preforming model.
 
 ### Takeaways
 As expected the AI preformed better when trained on larger higher quality images. However the training time increased exponentially.
