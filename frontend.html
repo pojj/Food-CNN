@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+
+        #imageInput {
+            margin-bottom: 20px;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        #uploadedImage {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Food Nutrition AI</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="sendImage()">Submit Image</button>
+    <div id="result"></div>
+    <img id="uploadedImage" src="https://static.wikia.nocookie.net/minecraft_gamepedia/images/a/af/Apple_JE3_BE3.png/revision/latest/thumbnail/width/360/height/360?cb=20200519232834" alt="Uploaded Image">
+
+    <script>
+        function sendImage() {
+            const input = document.getElementById('imageInput');
+            const resultDiv = document.getElementById('result');
+            const uploadedImage = document.getElementById('uploadedImage');
+
+            if (input.files.length > 0) {
+                const file = input.files[0];
+                const formData = new FormData();
+                formData.append('image', file);
+
+                // Display the uploaded image
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    uploadedImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+
+                fetch('http://localhost:5000/predict', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    resultDiv.innerHTML = `<p>${data.class_name}, with ${Math.round(100*data.confidence)}% confidence</p> 
+                    <a href='https://www.google.com/search?q=${data.class_name.replace(" ", "+")}+nutrition+information'> See nutritional info</a>`;
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = '<p>Error occurred while making the API request.</p>';
+                    console.error('API Request Error:', error);
+                });
+            } else {
+                resultDiv.innerHTML = '<p>Please include an image.</p>';
+            }
+        }
+    </script>
+</body>
+</html>

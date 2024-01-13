@@ -38,6 +38,14 @@ def predict():
         return jsonify({"class_name": label_name, "confidence": confidence})
 
 
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+    return response
+
+
 with open("data\\labeldict.json", "r") as l:
     LABEL_DICT = json.load(l)
 
